@@ -1,9 +1,5 @@
 import discord
 from discord.ext import commands, bridge
-from discord.ext.pages import PaginatorButton, Paginator
-from discord.ui import Select, View
-
-import aiosqlite
 
 from utils.views import HelpSelectMenu
 from utils.bot import get_config
@@ -24,19 +20,10 @@ class HelpCommand(commands.Cog):
             case _:
                 return "Unable to retrieve status."
 
-    async def get_prefix(self, ctx):
-        db = await aiosqlite.connect('database/prefixes.db')
-        async with db.execute("SELECT * FROM prefixes") as cursor:
-            async for row in cursor:
-                if row[0] == ctx.guild.id:
-                    return row[1]
-            config = await get_config()
-            return config["BotConfiguration"]["Default_Prefix"]
-
     @bridge.bridge_command(name="help", description="shows explanations of commands")
     async def _help(self, ctx):
         config = await get_config()
-        prefix = await self.get_prefix(ctx)
+        prefix = '!'
         status = await self.get_status()
 
         embed = discord.Embed(

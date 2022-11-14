@@ -1,8 +1,9 @@
+from abc import ABC
+
 import discord
-from discord.ext import commands, bridge
+from discord.ext import bridge
 
 import aiohttp
-import aiosqlite
 import logging
 import yaml
 
@@ -12,22 +13,11 @@ async def get_config():
         return yaml.safe_load(f)
 
 
-async def get_prefix(client, message):
-    db = await aiosqlite.connect('database/prefixes.db')
-    async with db.execute("SELECT * FROM prefixes") as cursor:
-        async for row in cursor:
-            if row[0] == message.guild.id:
-                return commands.when_mentioned_or(row[1])(client, message)
-
-        prefix = await get_config()
-        return commands.when_mentioned_or(prefix["BotConfiguration"]["Default_Prefix"])(client, message)
-
-
-class MyClient(bridge.Bot):
+class MusicBot(bridge.Bot, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(
             intents=discord.Intents.all(),
-            command_prefix=get_prefix,
+            command_prefix='!',
             case_insensitive=True,
             strip_after_prefix=True,
             activity=discord.Activity(
@@ -35,6 +25,7 @@ class MyClient(bridge.Bot):
             ),
             help_command=None,
         )
+        self.session = None
 
     async def close(self):
         await super().close()
@@ -48,4 +39,3 @@ class MyClient(bridge.Bot):
         logging.info(f'Connected to bot: {self.user.name}'.center(55))
         logging.info(f'Bot ID: {self.user.id}'.center(55))
         logging.info("┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛")
-        await self.sync_commands()
